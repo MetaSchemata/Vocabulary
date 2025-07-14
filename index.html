@@ -1,80 +1,107 @@
-<script>
-  const CLIENT_ID = '781668425056-cmmvj10e6ctmin96spp9j5rh5dqfton2.apps.googleusercontent.com';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-  let tokenClient;
-  let accessToken = null;
-  let fileId = localStorage.getItem('noteFileId');
+<!DOCTYPE html>
+<html>
 
-  function initializeGapiAndAuth() {
-    gapi.load('client', async () => {
-      await gapi.client.init({});
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (tokenResponse) => {
-          accessToken = tokenResponse.access_token;
-          document.getElementById('status').textContent = "✅ Signed in";
-          loadOrCreateNote();
-        },
-      });
-
-      // Button must be initialized after google object is available
-      document.getElementById('signin').onclick = () => {
-        tokenClient.requestAccessToken();
-      };
-    });
-  }
-
-  // Wait until both scripts are loaded
-  function waitForGoogleOAuthScript(retries = 10) {
-    if (typeof google === 'undefined') {
-      if (retries > 0) {
-        setTimeout(() => waitForGoogleOAuthScript(retries - 1), 300);
-      } else {
-        alert("Google OAuth script failed to load.");
-      }
-      return;
+<head>
+  <title>Google Drive Note</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    textarea {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
     }
-    initializeGapiAndAuth();
-  }
 
-  waitForGoogleOAuthScript();
+    #status {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
 
-  async function loadOrCreateNote() {
-    if (fileId) {
-      try {
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-          headers: { Authorization: 'Bearer ' + accessToken }
+<body>
+  <h1>📝 Google Drive Note</h1>
+  <button id="signin">🔐 Sign in with Google</button>
+  <div id="status">🔒 Not signed in</div>
+  <textarea id="note" placeholder="Your note will appear here..."></textarea>
+
+  <script>
+    const CLIENT_ID = '781668425056-cmmvj10e6ctmin96spp9j5rh5dqfton2.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    let tokenClient, accessToken = null;
+    let fileId = localStorage.getItem('noteFileId');
+
+    function initializeGapiAndAuth() {
+      gapi.load('client', async () => {
+        await gapi.client.init({});
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: (tokenResponse) => {
+            accessToken = tokenResponse.access_token;
+            document.getElementById('status').textContent = "✅ Signed in";
+            loadOrCreateNote();
+          },
         });
-        const content = await res.text();
-        document.getElementById('note').value = content;
-      } catch {
-        fileId = null;
+        document.getElementById('signin').onclick = () => {
+          tokenClient.requestAccessToken();
+        };
+      });
+    }
+
+    function waitForGoogleOAuthScript(retries = 10) {
+      if (typeof google === 'undefined') {
+        if (retries > 0) {
+          setTimeout(() => waitForGoogleOAuthScript(retries - 1), 300);
+        } else {
+          alert("❌ Google OAuth script failed to load.");
+        }
+        return;
+      }
+      initializeGapiAndAuth();
+    }
+
+    waitForGoogleOAuthScript();
+
+    async function loadOrCreateNote() {
+      if (fileId) {
+        try {
+          const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { Authorization: 'Bearer ' + accessToken }
+          });
+          const content = await res.text();
+          document.getElementById('note').value = content;
+        } catch (e) {
+          console.warn("Failed to load existing note, creating a new one.");
+          fileId = null;
+        }
+      }
+
+      if (!fileId) {
+        const createRes = await gapi.client.drive.files.create({
+          resource: { name: "DriveNote.txt", mimeType: "text/plain" },
+          fields: "id"
+        });
+        fileId = createRes.result.id;
+        localStorage.setItem('noteFileId', fileId);
       }
     }
 
-    if (!fileId) {
-      const createRes = await gapi.client.drive.files.create({
-        resource: { name: "DriveNote.txt", mimeType: "text/plain" },
-        fields: "id"
+    setInterval(() => {
+      if (!fileId || !accessToken) return;
+      const content = document.getElementById('note').value;
+      fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH",
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'text/plain'
+        },
+        body: content
+      }).then(() => {
+        document.getElementById('status').textContent = "✅ Saved at " + new Date().toLocaleTimeString();
       });
-      fileId = createRes.result.id;
-      localStorage.setItem('noteFileId', fileId);
-    }
-  }
+    }, 5000);
+  </script>
+</body>
 
-  setInterval(() => {
-    if (!fileId || !accessToken) return;
-    const content = document.getElementById('note').value;
-    fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-      method: "PATCH",
-      headers: {
-        'Authorization': 'Bearer ' + accessToken,
-        'Content-Type': 'text/plain'
-      },
-      body: content
-    }).then(() => {
-      document.getElementById('status').textContent = "✅ Saved at " + new Date().toLocaleTimeString();
-    });
-  }, 5000);
-</script>
+</html>
