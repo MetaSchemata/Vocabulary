@@ -72,7 +72,9 @@
     }
 
     .editor textarea {
-      font-family: Georgia, serif !important;
+      font-family: Georgia, serif;
+      font-size: 16px;
+      line-height: 1.15;
     }
   </style>
 </head>
@@ -82,7 +84,8 @@
     <div class="main">
       <div class="editor">
         <div id="status">⏳ Loading...</div>
-        <textarea placeholder="Add new vocabulary words here..." style="height: 600px; overflow-y: auto;"></textarea>
+        <textarea id="note" placeholder="Add new vocabulary words here..."
+          style="height: 600px; overflow-y: auto;"></textarea>
       </div>
       <div class="button-group">
 
@@ -123,6 +126,7 @@
     const textarea = document.getElementById('note');
     let lastSaved = "";
     let debounceTimer = null;
+    let pendingChanges = false;
 
     async function loadNote() {
       try {
@@ -156,6 +160,7 @@
           body: JSON.stringify({ text: content })
         });
         status.textContent = "✅ Saved at " + new Date().toLocaleTimeString();
+        pendingChanges = false;
       } catch (err) {
         console.error(err);
         status.textContent = "❌ Failed to save";
@@ -164,6 +169,7 @@
 
     textarea.addEventListener('input', () => {
       status.textContent = "💾 Saving...";
+      pendingChanges = true;
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const current = textarea.value;
@@ -174,9 +180,16 @@
       }, 2000);
     });
 
+    window.addEventListener('beforeunload', function (e) {
+      if (pendingChanges) {
+        e.preventDefault();
+        e.returnValue = 'Changes you made may not be saved.';
+      }
+    });
+
     function searchDict(source) {
       const text = window.getSelection().toString().trim() || textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-      // if (!text) return alert("Select a word to look up.");
+      if (!text) return alert("Select a word to look up.");
 
       let url = '';
       switch (source) {
