@@ -50,8 +50,9 @@
     .button-group {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
+      justify-content: flex-end;
       gap: 10px;
+      padding-bottom: 10px;
     }
 
     .button-group button {
@@ -148,7 +149,7 @@
 
     function searchDict(source) {
       const text = window.getSelection().toString().trim() || textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-      if (!text) return alert("Select a word to look up.");
+     // if (!text) return alert("Select a word to look up.");
 
       let url = '';
       switch (source) {
