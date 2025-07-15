@@ -1,24 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>📝 JSONBin Note</title>
+  <meta charset="UTF-8">
+  <title>Vocabulary Note</title>
   <style>
-    textarea {
-      width: 100%;
-      height: 300px;
-      font-family: monospace;
+    body {
+      background-color: #f9f9f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
     }
+
     #status {
-      margin-top: 10px;
+      margin-bottom: 10px;
       color: green;
+      font-size: 0.9rem;
+    }
+
+    #note {
+      width: 90%;
+      height: 600px;
+      font-size: 16px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      resize: vertical;
+      outline: none;
+    }
+
+    .dictionary-buttons {
+      margin: 15px 0;
+    }
+
+    .dictionary-buttons button {
+      margin: 0 5px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+    }
+
+    .dictionary-buttons button:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-  <h1>📝 JSONBin Note</h1>
+
   <div id="status">⏳ Loading...</div>
-  <textarea id="note" placeholder="Start typing..."></textarea>
+
+  <div class="dictionary-buttons">
+    <button onclick="searchDict('oxford')">Oxford</button>
+    <button onclick="searchDict('cambridge')">Cambridge</button>
+    <button onclick="searchDict('google')">Google Define</button>
+  </div>
+
+  <textarea id="note" placeholder="Add new vocabulary words here..."></textarea>
 
   <script>
     const API_KEY = '$2a$10$qVOWTiPggbYV3jCnVcWIn.6j5qZdBQUtzynBHEu5CkhwJtieHmvMa';
@@ -30,7 +74,6 @@
     let lastSaved = "";
     let debounceTimer = null;
 
-    // Load existing note from bin
     async function loadNote() {
       try {
         const res = await fetch(URL, {
@@ -39,14 +82,19 @@
         const data = await res.json();
         textarea.value = data.record.text || '';
         lastSaved = textarea.value;
-        status.textContent = "✅ Loaded";
+        status.textContent = "✅ Loaded at " + new Date().toLocaleTimeString();
+
+        // Scroll to bottom after loading
+        setTimeout(() => {
+          textarea.scrollTop = textarea.scrollHeight;
+          textarea.focus();
+        }, 100);
       } catch (err) {
         console.error(err);
         status.textContent = "❌ Failed to load";
       }
     }
 
-    // Save current note to bin
     async function saveNote(content) {
       try {
         await fetch(URL, {
@@ -64,7 +112,6 @@
       }
     }
 
-    // Auto-save on pause
     textarea.addEventListener('input', () => {
       status.textContent = "💾 Saving...";
       clearTimeout(debounceTimer);
@@ -74,10 +121,30 @@
           saveNote(current);
           lastSaved = current;
         }
-      }, 2000); // Save after 2s of no typing
+      }, 2000);
     });
 
-    loadNote(); // Load on page load
+    function searchDict(source) {
+      const text = window.getSelection().toString().trim() || textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
+      if (!text) return alert("Select a word to look up.");
+
+      let url = '';
+      switch (source) {
+        case 'oxford':
+          url = `https://www.oxfordlearnersdictionaries.com/definition/english/${encodeURIComponent(text)}`;
+          break;
+        case 'cambridge':
+          url = `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(text)}`;
+          break;
+        case 'google':
+          url = `https://www.google.com/search?q=define%3A${encodeURIComponent(text)}`;
+          break;
+      }
+      window.open(url, '_blank');
+    }
+
+    loadNote();
   </script>
+
 </body>
 </html>
