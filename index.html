@@ -1,120 +1,83 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Google Drive Note</title>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta charset="UTF-8" />
+  <title>📝 JSONBin Note</title>
   <style>
     textarea {
       width: 100%;
       height: 300px;
       font-family: monospace;
     }
-
     #status {
       margin-top: 10px;
       color: green;
     }
   </style>
 </head>
-
 <body>
-  <h1>📝 Google Drive Note</h1>
-  <button id="signin">🔐 Sign in with Google</button>
-  <div id="status">🔒 Not signed in</div>
-  <textarea id="note" placeholder="Your note will appear here..."></textarea>
+  <h1>📝 JSONBin Note</h1>
+  <div id="status">⏳ Loading...</div>
+  <textarea id="note" placeholder="Start typing..."></textarea>
 
   <script>
-    const CLIENT_ID = '781668425056-cmmvj10e6ctmin96spp9j5rh5dqfton2.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    let tokenClient, accessToken = null;
-    let fileId = localStorage.getItem('noteFileId');
+    const API_KEY = '$2a$10$qVOWTiPggbYV3jCnVcWIn.6j5qZdBQUtzynBHEu5CkhwJtieHmvMa';
+    const BIN_ID = '6875d986271ee80cc5fbb5ba';
+    const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-    function initializeGapiAndAuth() {
-      gapi.load('client', async () => {
-        await gapi.client.init({});
+    const status = document.getElementById('status');
+    const textarea = document.getElementById('note');
+    let lastSaved = "";
+    let debounceTimer = null;
 
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: (tokenResponse) => {
-            if (tokenResponse.error) {
-              console.error('Token error:', tokenResponse);
-              return;
-            }
-            accessToken = tokenResponse.access_token;
-            document.getElementById('status').textContent = "✅ Signed in";
-            loadOrCreateNote();
-          }
+    // Load existing note from bin
+    async function loadNote() {
+      try {
+        const res = await fetch(URL, {
+          headers: { 'X-Master-Key': API_KEY }
         });
-
-        // Attempt silent login first
-        try {
-          tokenClient.requestAccessToken({ prompt: 'none' });
-        } catch (e) {
-          console.warn('Silent login failed, waiting for manual login');
-        }
-
-        document.getElementById('signin').onclick = () => {
-          tokenClient.requestAccessToken();
-        };
-      });
+        const data = await res.json();
+        textarea.value = data.record.text || '';
+        lastSaved = textarea.value;
+        status.textContent = "✅ Loaded";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Failed to load";
+      }
     }
 
-    function waitForGoogleOAuthScript(retries = 10) {
-      if (typeof google === 'undefined') {
-        if (retries > 0) {
-          setTimeout(() => waitForGoogleOAuthScript(retries - 1), 300);
-        } else {
-          alert("❌ Google OAuth script failed to load.");
-        }
-        return;
-      }
-      initializeGapiAndAuth();
-    }
-
-    waitForGoogleOAuthScript();
-
-    async function loadOrCreateNote() {
-      if (fileId) {
-        try {
-          const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-            headers: { Authorization: 'Bearer ' + accessToken }
-          });
-          const content = await res.text();
-          document.getElementById('note').value = content;
-        } catch (e) {
-          console.warn("Failed to load existing note, creating a new one.");
-          fileId = null;
-        }
-      }
-
-      if (!fileId) {
-        const createRes = await gapi.client.drive.files.create({
-          resource: { name: "DriveNote.txt", mimeType: "text/plain" },
-          fields: "id"
+    // Save current note to bin
+    async function saveNote(content) {
+      try {
+        await fetch(URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+          },
+          body: JSON.stringify({ text: content })
         });
-        fileId = createRes.result.id;
-        localStorage.setItem('noteFileId', fileId);
+        status.textContent = "✅ Saved at " + new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Failed to save";
       }
     }
 
-    setInterval(() => {
-      if (!fileId || !accessToken) return;
-      const content = document.getElementById('note').value;
-      fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-        method: "PATCH",
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'text/plain'
-        },
-        body: content
-      }).then(() => {
-        document.getElementById('status').textContent = "✅ Saved at " + new Date().toLocaleTimeString();
-      });
-    }, 5000);
+    // Auto-save on pause
+    textarea.addEventListener('input', () => {
+      status.textContent = "💾 Saving...";
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        const current = textarea.value;
+        if (current !== lastSaved) {
+          saveNote(current);
+          lastSaved = current;
+        }
+      }, 2000); // Save after 2s of no typing
+    });
+
+    loadNote(); // Load on page load
   </script>
 </body>
-
 </html>
