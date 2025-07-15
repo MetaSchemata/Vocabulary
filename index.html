@@ -20,7 +20,7 @@
 </head>
 
 <body>
-  <h1>📝 Google Drive Note</h1>
+  <h1>🗘️ Google Drive Note</h1>
   <button id="signin">🔐 Sign in with Google</button>
   <div id="status">🔒 Not signed in</div>
   <textarea id="note" placeholder="Your note will appear here..."></textarea>
@@ -34,15 +34,22 @@
     function initializeGapiAndAuth() {
       gapi.load('client', async () => {
         await gapi.client.init({});
+
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
+          prompt: '', // allows silent login attempt
           callback: (tokenResponse) => {
             accessToken = tokenResponse.access_token;
             document.getElementById('status').textContent = "✅ Signed in";
             loadOrCreateNote();
           },
         });
+
+        // Attempt silent login on load
+        tokenClient.requestAccessToken({ prompt: 'none' });
+
+        // Fallback manual login
         document.getElementById('signin').onclick = () => {
           tokenClient.requestAccessToken();
         };
