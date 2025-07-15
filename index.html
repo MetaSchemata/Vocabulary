@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Vocabulary Note</title>
@@ -52,7 +53,7 @@
       flex-direction: column;
       justify-content: flex-end;
       gap: 10px;
-      padding-bottom: 10px;
+      padding-bottom: 250px;
     }
 
     .button-group button {
@@ -69,23 +70,46 @@
     .button-group button:hover {
       background-color: #0056b3;
     }
+
+    .editor textarea {
+      font-family: Georgia, serif !important;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div class="main">
       <div class="editor">
         <div id="status">⏳ Loading...</div>
-        <textarea id="note" placeholder="Add new vocabulary words here..."></textarea>
+        <textarea placeholder="Add new vocabulary words here..." style="height: 600px; overflow-y: auto;"></textarea>
       </div>
       <div class="button-group">
+
         <button onclick="searchDict('oxford')">
-          <img src="oxford.png" alt="Oxford" style="height: 16px; vertical-align: middle; margin-right: 6px;">
+          <img src="oxford.png" alt="Oxford"
+            style="height: 16px; vertical-align: middle;margin-top: -2px; margin-right: 0px;">
           Oxford
         </button>
-        <button onclick="searchDict('cambridge')">Cambridge</button>
-        <button onclick="searchDict('google')">Google Define</button>
-        <button onclick="searchDict('gemini')">Gemini AI</button>
+
+        <button onclick="searchDict('cambridge')">
+          <img src="cambridge.png" alt="Cambridge"
+            style="height: 16px; vertical-align: middle; margin-top: -2px; margin-right: 0px;">
+          Cambridge
+        </button>
+
+        <button onclick="searchDict('google')">
+          <img src="google.png" alt="Google"
+            style="height: 16px; vertical-align: middle; margin-top: -2px; margin-right: 0px;">
+          Google
+        </button>
+
+        <button onclick="searchDict('gemini')">
+          <img src="gemini.png" alt="Gemini"
+            style="height: 16px; vertical-align: middle; margin-top: -2px; margin-right: 0px;">
+          Gemini
+        </button>
+
       </div>
     </div>
   </div>
@@ -152,7 +176,7 @@
 
     function searchDict(source) {
       const text = window.getSelection().toString().trim() || textarea.value.substring(textarea.selectionStart, textarea.selectionEnd).trim();
-     // if (!text) return alert("Select a word to look up.");
+      // if (!text) return alert("Select a word to look up.");
 
       let url = '';
       switch (source) {
@@ -175,4 +199,5 @@
     loadNote();
   </script>
 </body>
+
 </html>
