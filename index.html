@@ -9,16 +9,24 @@
       padding: 0;
       background-color: #f9f9f9;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
       display: flex;
-      height: 100vh;
+      justify-content: center;
+      padding: 20px;
     }
 
     .main {
-      flex-grow: 1;
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+    }
+
+    .editor {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 20px;
+      align-items: flex-start;
     }
 
     #status {
@@ -29,8 +37,7 @@
 
     #note {
       width: 600px;
-      height: 90%;
-      max-height: 100%;
+      height: 90vh;
       font-size: 16px;
       padding: 10px;
       border: 1px solid #ccc;
@@ -40,50 +47,48 @@
       outline: none;
     }
 
-    .sidebar-right {
-      width: 140px;
-      background-color: #ffffff;
-      padding: 20px 10px;
-      border-left: 1px solid #ccc;
+    .button-group {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
     }
 
-    .sidebar-right button {
-      margin: 10px 0;
+    .button-group button {
       padding: 10px;
-      width: 100%;
       font-size: 14px;
       border: none;
       border-radius: 5px;
       background-color: #007bff;
       color: white;
       cursor: pointer;
+      width: 120px;
     }
 
-    .sidebar-right button:hover {
+    .button-group button:hover {
       background-color: #0056b3;
     }
   </style>
 </head>
 <body>
-
-  <div class="main">
-    <div id="status">⏳ Loading...</div>
-    <textarea id="note" placeholder="Add new vocabulary words here..."></textarea>
-  </div>
-
-  <div class="sidebar-right">
-    <button onclick="searchDict('oxford')">Oxford</button>
-    <button onclick="searchDict('cambridge')">Cambridge</button>
-    <button onclick="searchDict('google')">Google Define</button>
-    <button onclick="searchDict('gemini')">Gemini AI</button>
+  <div class="container">
+    <div class="main">
+      <div class="editor">
+        <div id="status">⏳ Loading...</div>
+        <textarea id="note" placeholder="Add new vocabulary words here..."></textarea>
+      </div>
+      <div class="button-group">
+        <button onclick="searchDict('oxford')">Oxford</button>
+        <button onclick="searchDict('cambridge')">Cambridge</button>
+        <button onclick="searchDict('google')">Google Define</button>
+        <button onclick="searchDict('gemini')">Gemini AI</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const API_KEY = '$2a$10$qVOWTiPggbYV3jCnVcWIn.6j5qZdBQUtzynBHEu5CkhwJtieHmvMa';
-    const BIN_ID = '6875d986271ee80cc5fbb5ba';
+    const API_KEY = 'YOUR_API_KEY_HERE';
+    const BIN_ID = 'YOUR_BIN_ID_HERE';
     const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
 
     const status = document.getElementById('status');
